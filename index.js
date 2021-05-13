@@ -35,9 +35,9 @@ client.on('message', msg => {
 	// .shift saca el 'comando' del array de 'args' (para mantener separados dos conceptos diferentes)
 	const commandName = args.shift().toLowerCase();
 
-	if (!client.commands.has(commandName)) return;
+	const command = client.commands.get(commandName) || client.commands.find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
 
-	const command = client.commands.get(commandName);
+	if (!command) return;
 
 	if (command.guildOnly && msg.channel.type === 'dm')
 		return msg.reply('This command cannot be used inside DMs');
