@@ -1,4 +1,3 @@
-// TODO Ver de hacer algo como el concat, para separar todo en distintas clases y que despues me haga el package de una, asi puedo mantener el codigo un poco mas prolijo
 // TODO Podria buscar alguna forma de hacer que los mensajes devueltos por los comandos sean multilingues, solo por curiosidad
 // fs es el modulo de fileSystem que provee node.js
 const fs = require('fs');
@@ -11,6 +10,7 @@ const { TOKEN, prefix } = process.env;
 
 const client = new Discord.Client();
 client.commands = new Discord.Collection();
+client.cooldowns = new Discord.Collection();
 
 const commandFolders = fs.readdirSync('./commands');
 
@@ -53,6 +53,27 @@ client.on('message', msg => {
 
 		return msg.channel.send(reply);
 	}
+
+	const { cooldowns } = client;
+
+	if (!cooldowns.has(command.name))
+		cooldowns.set(command.name, new Discord.Collection());
+
+	const now = Date.now();
+	const timestamps = cooldowns.get(command.name);
+	const cooldownAmount = (command.cooldown || 3) * 1000;
+
+	if (timestamps.has(msg.author.id)) {
+		const expirationTime = timestamps.get(msg.author.id) + cooldownAmount;
+
+		if (now < expirationTime) {
+			const timeLeft = (expirationTime - now) / 1000;
+			return msg.reply(`Please wait ${timeLeft.toFixed(1)} more second(s) before reusing the '${command.name}' command`);
+		}
+	}
+
+	timestamps.set(msg.author.id, now);
+	setTimeout(() => timestamps.delete(msg.author.id), cooldownAmount);
 
 	try {
 		command.execute(msg, args);
