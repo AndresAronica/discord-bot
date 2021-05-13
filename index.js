@@ -39,6 +39,21 @@ client.on('message', msg => {
 
 	const command = client.commands.get(commandName);
 
+	if (command.guildOnly && msg.channel.type === 'dm')
+		return msg.reply('This command cannot be used inside DMs');
+
+	// Si en los archivos commands se setea args: true va a hacer este check
+	// Es generico, en vez de tener que ponerlo en cada command que espera argumentos
+	if (command.args && !args.length) {
+		let reply = `You didn't provide any arguments, ${msg.author}. `;
+
+		// Si el comando aclara como se deberia usar, se lo agrega al mensaje de 'error'
+		if (command.usage)
+			reply += `The proper use would be: \`${prefix}${commandName} ${command.usage}\``;
+
+		return msg.channel.send(reply);
+	}
+
 	try {
 		command.execute(msg, args);
 	}
